@@ -15,6 +15,12 @@ else()
   message(FATAL_ERROR "The path specified by LLVM_PROJ_SRC does not exist: "
         ${LLVM_PROJ_SRC})
 endif()
+if(EXISTS ${LLVM_PROJ_SRC})
+message(STATUS "LLVM_PROJ_SRC           : " ${LLVM_PROJ_SRC})
+else()
+message(FATAL_ERROR "The path specified by LLVM_PROJ_SRC does not exist: "
+        ${LLVM_PROJ_SRC})
+endif()
 
 # Path to LLVM build folder
 if(DEFINED LLVM_PROJ_BUILD)
@@ -29,6 +35,12 @@ if(EXISTS ${LLVM_PROJ_BUILD})
   message(STATUS "LLVM_PROJ_BUILD         : " ${LLVM_PROJ_BUILD})
 else()
   message(FATAL_ERROR "The path specified by LLVM_PROJ_BUILD does not exist: "
+        ${LLVM_PROJ_BUILD})
+endif()
+if(EXISTS ${LLVM_PROJ_BUILD})
+message(STATUS "LLVM_PROJ_BUILD         : " ${LLVM_PROJ_BUILD})
+else()
+message(FATAL_ERROR "The path specified by LLVM_PROJ_BUILD does not exist: "
         ${LLVM_PROJ_BUILD})
 endif()
 
