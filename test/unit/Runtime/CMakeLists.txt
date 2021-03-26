@@ -1,4 +1,4 @@
-add_subdirectory(DocExampleTest)
+#add_subdirectory(DocExampleTest)
 
 add_c_unit_test(OMTensorTest OMTensorTest.c)
 target_include_directories(OMTensorTest PRIVATE
