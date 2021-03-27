@@ -1,15 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Some backward compatability, which should eventually be removed.
-if (USE_INSTALLED_LLVM)
-  set(LLVM_CMAKE_DIR
-        "${LLVM_PROJECT_LIB}/cmake/llvm"
-        CACHE PATH "Path to LLVM cmake modules")
+# Path to LLVM build folder or install area.
+if(DEFINED LLVM_PROJ_BUILD)
+elseif(DEFINED ENV{LLVM_PROJ_BUILD})
+  set(LLVM_PROJ_BUILD $ENV{LLVM_PROJ_BUILD})
 else()
-  set(LLVM_CMAKE_DIR
-        "${LLVM_PROJ_BUILD}/lib/cmake/llvm"
-        CACHE PATH "Path to LLVM cmake modules")
+  message(FATAL_ERROR "env variable LLVM_PROJ_BUILD not set")
 endif()
+if(EXISTS ${LLVM_PROJ_BUILD})
+message(STATUS "LLVM_PROJ_BUILD         : " ${LLVM_PROJ_BUILD})
+else()
+message(FATAL_ERROR "The path specified by LLVM_PROJ_BUILD does not exist: "
+        ${LLVM_PROJ_BUILD})
+endif()
+
+set(LLVM_CMAKE_DIR
+      "${LLVM_PROJ_BUILD}/lib/cmake/llvm"
+      CACHE PATH "Path to LLVM cmake modules")
 
 set(LLVM_DIR ${LLVM_CMAKE_DIR})
 set(MLIR_DIR ${LLVM_CMAKE_DIR}/../mlir)
@@ -28,27 +36,6 @@ include(AddLLVM)
 include(TableGen)
 
 
-# Path to LLVM build folder
-if(DEFINED LLVM_PROJ_BUILD)
-  # Just use it...
-elseif(DEFINED ENV{LLVM_PROJ_BUILD})
-  set(LLVM_PROJ_BUILD $ENV{LLVM_PROJ_BUILD})
-else()
-  message(FATAL_ERROR "LLVM_PROJ_BUILD is not configured.  Please set the env variable "
-  "LLVM_PROJ_BUILD or the corresponding cmake configuration option to reference an LLVM build.")
-endif()
-if(EXISTS ${LLVM_PROJ_BUILD})
-  message(STATUS "LLVM_PROJ_BUILD         : " ${LLVM_PROJ_BUILD})
-else()
-  message(FATAL_ERROR "The path specified by LLVM_PROJ_BUILD does not exist: "
-        ${LLVM_PROJ_BUILD})
-endif()
-if(EXISTS ${LLVM_PROJ_BUILD})
-message(STATUS "LLVM_PROJ_BUILD         : " ${LLVM_PROJ_BUILD})
-else()
-message(FATAL_ERROR "The path specified by LLVM_PROJ_BUILD does not exist: "
-        ${LLVM_PROJ_BUILD})
-endif()
 
 # LLVM project lib folder
 if (ENV{LLVM_PROJECT_LIB})
@@ -111,18 +98,19 @@ set(ONNX_MLIR_LIT_TEST_BUILD_DIR ${CMAKE_BINARY_DIR}/test/mlir)
 set(MLIR_INCLUDE_PATHS ${LLVM_INCLUDE_DIRS};${MLIR_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_PATHS})
 
-if (NOT USE_INSTALLED_LLVM)
-  # Force CMAKE_INSTALL_PREFIX and BUILD_SHARED_LIBS to be the same as LLVM build
-  # FIXME: this is probably not a good idea.
+# If we're pointing at an LLVM build, then assume we want to install into the same
+# install location
+if(EXISTS ${LLVM_PROJ_BUILD}/CMakeCache.txt)
   file(STRINGS ${LLVM_PROJ_BUILD}/CMakeCache.txt prefix REGEX CMAKE_INSTALL_PREFIX)
   string(REGEX REPLACE "CMAKE_INSTALL_PREFIX:PATH=" "" prefix ${prefix})
   set(CMAKE_INSTALL_PREFIX ${prefix} CACHE PATH "" FORCE)
   message(STATUS "CMAKE_INSTALL_PREFIX    : " ${CMAKE_INSTALL_PREFIX})
-
-  set(shared ${LLVM_ENABLE_SHARED_LIBS})
-  set(BUILD_SHARED_LIBS ${shared} CACHE BOOL "" FORCE)
-  message(STATUS "BUILD_SHARED_LIBS       : " ${BUILD_SHARED_LIBS})
 endif()
+
+# Force BUILD_SHARED_LIBS to be the same as LLVM build
+set(shared ${LLVM_ENABLE_SHARED_LIBS})
+set(BUILD_SHARED_LIBS ${shared} CACHE BOOL "" FORCE)
+message(STATUS "BUILD_SHARED_LIBS       : " ${BUILD_SHARED_LIBS})
 
 # Threading libraries required due to parallel pass execution.
 # FIXME Should be added to LLVMConfig.cmake
